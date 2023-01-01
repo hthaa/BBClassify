@@ -134,12 +134,6 @@ def bbintegrate2(a, b, l, u, N, n1, n2, k, lower, upper, method = "ll"):
             return dbeta4p(x, a, b, l, u) * binom.pmf(n1, N, x) * binom.pmf(n2, N, x)
         return quad(f, lower, upper, args = (a, b, l, u, N, n1, n2))
 
-    
-
-#integral = bbintegrate2(5, 3, .25, .75, 10, 5, 5, 1, 0, 1, "HB")
-
-#print(integral)
-
 ## Function for calculating the descending factorial each value of a vector.
 # x = vector of values.
 # r = the power x is to be raised to.
@@ -199,6 +193,23 @@ def betaparameters(x, n, k, model = 4, l = 0, u = 1):
     return {"alpha":  a, "beta": b, "l": l, "u": u}
 
 ## Function for estimating accuracy and consistency from beta-binomial models.
+# x = vector of values representing test-scores, or a list of model parameters.
+# reliability = the reliability coefficient of the test-scores.
+# min = the minimum possible score to attain on the test (only necessary for 
+#       the Livingston and Lewis approach).
+# max = for the Livingston and Lewis approach, the maximum possible score to 
+#       attain on the test. For the Hanson and Brennan approach, the actual
+#       test length (number of items).
+# model = how many parameters of the true-score distribution that is to be
+#       estimated (4 or 2). Default is 4.
+# l = the lower-bound location parameter for the two-parameter distribution.
+# u = the lower-bound location parameter for the two-parameter distribution.
+# failsafe = whether the function should automatically revert to a two-
+#       parameter solution if the four-parameter fitting procedure produces
+#       impermissible location-parameter estimates.
+# method = whether the Livingston and Lewis or the Hanson and Brennan approach
+#       is to be employed. Default is "ll" (Livingston and Lewis). Any other
+#       value passed means the Hanson and Brennan approach.
 def cac(x, reliability, min, max, cut, model = 4, l = 0, u = 1, failsafe = False, method = "ll"):
     output = {}
     cut = [min] + cut + [max]
