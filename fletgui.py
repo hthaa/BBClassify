@@ -211,13 +211,22 @@ def s2n(s):
     if len(out) == 1:
         out = out[0]
     return out
-def csv_to_list(x):
+def csv_to_list1(x):
     data = []
-    with open('test.csv', 'r') as file:
+    with open(x, 'r') as file:
         reader = csv.reader(file)
         for row in reader:
             row = list(map(float, row))
             data.append(row)
+    for i in range(len(data)):
+        data[i] = sum(data[i])
+    return data
+def csv_to_list2(x):
+    data = []
+    reader = csv.reader(x)
+    for row in reader:
+        row = list(map(float, row))
+        data.append(row)
     for i in range(len(data)):
         data[i] = sum(data[i])
     return data
@@ -234,21 +243,32 @@ def main(page: ft.Page):
         )
         filepath.update()
 
+    testresults = [ft.Text("Results:", weight = ft.FontWeight.BOLD)]
+    pars = {"alpha": 5, "beta": 3, "l": 0, "u": 1, "etl": 20, "lords_k": 0}
+
+    pars = cac(pars, 0.4571138, cut = [5, 10, 15], min = 0, max = 20, model = 4, l = 0, u = 1, failsafe = False, method = "ll")  
+    out = list(pars.keys())
+    for i in range(len(out)):
+        testresults = testresults + [ft.Text(out[i])]
+        testresults = testresults + [ft.Text(pars[out[i]])]
+
+    #testresults = [np.zeros((5, 5)), "test"] 
+
     pick_files_dialog = ft.FilePicker(on_result = pick_files_result)
     page.overlay.append(pick_files_dialog)
 
     choosefile = ft.FilledButton(
         text = "Choose file...", width = 150, icon = ft.icons.UPLOAD_FILE,
         tooltip = "Choose .csv file where rows represent persons and columns represent items. The rows and columns must not be named (i.e., the file should only consist of numbers representing item-scores). The rows will be summed, so the persons final scores will be their sum-scores. If you wish to employ a different scoring-rule, then perform the scoring manually and supply a .csv file containing only a single column representing final test-scores. Decimal points must be marked with a period ('.').", 
-        on_click = lambda _: pick_files_dialog.pick_files(allow_multiple = False)
+        on_click = lambda _: pick_files_dialog.pick_files(allow_multiple = False, allowed_extensions = ["csv"])
         )
     
     choosefile.bgcolor = "blue"
 
-    filepath = ft.TextField(width = 470, text_align=ft.TextAlign.LEFT, label = "File name", disabled = True)
+    filepath = ft.TextField(width = 470, text_align = ft.TextAlign.LEFT, label = "File name", disabled = True)
     
     approach = ft.Dropdown(
-        width = 630, label="Approach", hint_text = "Choose estimation method.", options = [ft.dropdown.Option("Hanson and Brennan"), ft.dropdown.Option("Livingston and Lewis")],
+        width = 630, label = "Approach", hint_text = "Choose estimation method.", options = [ft.dropdown.Option("Hanson and Brennan"), ft.dropdown.Option("Livingston and Lewis")],
         tooltip = "The Hanson and Brennan approach requires the test-items to be scored as integers. \nThe Livingston and Lewis approach does not require the test-items to be scored in a particular manner."        
         )
     
@@ -258,7 +278,7 @@ def main(page: ft.Page):
         )
     
     max_number = ft.TextField(
-        width = 150, text_align = ft.TextAlign.RIGHT, label = "Maximum score", hint_text = "0", 
+        width = 150, text_align = ft.TextAlign.RIGHT, label = "Maximum score", hint_text = "10 0", 
         tooltip = "For the Livingston and Lewis approach: the maximum score that it is possible to attain on the test. \nFor the Hanson and Brennan approach: the actual test length in terms of number of items."
         )
 
@@ -322,34 +342,31 @@ def main(page: ft.Page):
     #This is an H1 
     =============
     """
-    page.fonts = {
-        "Roboto Mono": "RobotoMono-VariableFont_wght.ttf",
-    }
-    results = ft.Markdown(md1, width = 630, selectable = True, code_style = ft.TextStyle(font_family="Roboto Mono"))
+    results = testresults
+    #ft.Markdown(md1, width = 630, selectable = True, code_style = ft.TextStyle(font_family="Roboto Mono"))
     
     page.add(
         ft.Row(controls = [
             ft.Column(controls = [
-                ft.Text("Data:"),
+                ft.Text("Data:", weight = ft.FontWeight.BOLD),
                 ft.Row(controls = [choosefile, filepath]),        
                 ft.Divider(),
-                ft.Text("Model fitting controls:"), 
+                ft.Text("Model fitting controls:", weight = ft.FontWeight.BOLD), 
                 approach,
                 ft.Row(controls = [model, lower_bound, upper_bound]),
                 ft.Divider(),
-                ft.Text("Test information:"),
+                ft.Text("Test information:", weight = ft.FontWeight.BOLD),
                 ft.Row(
                     controls = [min_number, max_number, cut_number, reliability]
                 ),
                 ft.Divider(),
-                ft.Text("Output:"),
+                ft.Text("Output:", weight = ft.FontWeight.BOLD),
                 c1, c2, c3, c4,
                 ft.Divider(),
                 submit]
                 ),
-            ft.Column(controls = [ft.Text("Results:"),
-                results
-                    ]
+            ft.Column(
+                controls = results
                 )
             ], vertical_alignment = ft.CrossAxisAlignment.START
         )
