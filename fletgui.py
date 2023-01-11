@@ -142,6 +142,7 @@ def cac(x, reliability, min, max, cut, model = 4, l = 0, u = 1, failsafe = False
             pars["lords_k"] = 0
             for i in range(len(cut)):
                 cut[i] = tcut[i] * N
+                cut[i] = round(cut[i])
         else:
             N = max 
             K = k(stats.mean(x), stats.variance(x), reliability, N)
@@ -150,7 +151,8 @@ def cac(x, reliability, min, max, cut, model = 4, l = 0, u = 1, failsafe = False
                 pars = betaparameters(x, max, N, 2, l, u)
             pars["lords_k"] = K
     if "parameters" in output:
-        out["parameters"] = pars    
+        out["parameters"] = pars
+        
     if "accuracy" in output:
         confmat = np.zeros((N + 1, len(cut) - 1))
         for i in range(len(cut) - 1):
@@ -201,17 +203,16 @@ def cac(x, reliability, min, max, cut, model = 4, l = 0, u = 1, failsafe = False
                 consistency = consistency + [consistencymatrix[i, i]]
             consistency = sum(consistency)
             out["consistencyMatrix"] = pd.DataFrame(consistencymatrix)
-            out["overallConsistency"] = consistency
-    
+            out["overallConsistency"] = consistency    
     return out
-def s2n(s):
+def s2n(s, notlist = True):
     out = [int(x) if x.isdigit() else float(x) for x in s.replace(', ', ',').split(',')]
     if any(isinstance(x, float) for x in out):
         out = list(map(float, out))
-    if len(out) == 1:
+    if len(out) == 1 and notlist == True:
         out = out[0]
     return out
-def csv_to_list1(x):
+def csv_to_list(x):
     data = []
     with open(x, 'r') as file:
         reader = csv.reader(file)
@@ -221,51 +222,41 @@ def csv_to_list1(x):
     for i in range(len(data)):
         data[i] = sum(data[i])
     return data
-def csv_to_list2(x):
-    data = []
-    reader = csv.reader(x)
-    for row in reader:
-        row = list(map(float, row))
-        data.append(row)
-    for i in range(len(data)):
-        data[i] = sum(data[i])
-    return data
 
 def main(page: ft.Page):
-    page.window_height = 825
+    page.window_height = 725
     page.window_width = 665 * 2
     page.scroll = True
     page.title = "BB-Classify"
-        
+
+    def submit_clicked(e):
+        output = cac(csv_to_list(filepath.value),
+                     s2n(reliability.value),
+                     s2n(min_number.value),
+                     s2n(max_number.value), 
+                     s2n(cut_number.value, False))
+        #output = {"Parameters": [1, 2, 3, 4], "Output": ["a", "b", "c", "d"]}
+        resultswindow.controls.append(ft.Text(output))
+        resultswindow.update()
+
     def pick_files_result(e: ft.FilePickerResultEvent):
         filepath.value = (
-            ", ".join(map(lambda f: f.name, e.files)) if e.files else "Selection cancelled."            
-        )
+            ", ".join(map(lambda f: f.path, e.files)) if e.files else "Selection cancelled."
+                    )
         filepath.update()
-
-    testresults = [ft.Text("Results:", weight = ft.FontWeight.BOLD)]
-    pars = {"alpha": 5, "beta": 3, "l": 0, "u": 1, "etl": 20, "lords_k": 0}
-
-    pars = cac(pars, 0.4571138, cut = [5, 10, 15], min = 0, max = 20, model = 4, l = 0, u = 1, failsafe = False, method = "ll")  
-    out = list(pars.keys())
-    for i in range(len(out)):
-        testresults = testresults + [ft.Text(out[i])]
-        testresults = testresults + [ft.Text(pars[out[i]])]
-
-    #testresults = [np.zeros((5, 5)), "test"] 
 
     pick_files_dialog = ft.FilePicker(on_result = pick_files_result)
     page.overlay.append(pick_files_dialog)
 
     choosefile = ft.FilledButton(
         text = "Choose file...", width = 150, icon = ft.icons.UPLOAD_FILE,
-        tooltip = "Choose .csv file where rows represent persons and columns represent items. The rows and columns must not be named (i.e., the file should only consist of numbers representing item-scores). The rows will be summed, so the persons final scores will be their sum-scores. If you wish to employ a different scoring-rule, then perform the scoring manually and supply a .csv file containing only a single column representing final test-scores. Decimal points must be marked with a period ('.').", 
+        tooltip = "Specify a path to a .csv file where rows represent persons and columns represent items. The rows and columns must not be named (i.e., the file should only consist of numbers representing item-scores, where each item-score is seperated by a comma (',')). The rows will be summed, so the persons final scores will be their sum-scores. If you wish to employ a different scoring-rule, then perform the scoring manually and supply a .csv file containing only a single column representing final test-scores. Decimal points must be marked with a period ('.').", 
         on_click = lambda _: pick_files_dialog.pick_files(allow_multiple = False, allowed_extensions = ["csv"])
-        )
-    
+        )    
     choosefile.bgcolor = "blue"
 
-    filepath = ft.TextField(width = 470, text_align = ft.TextAlign.LEFT, label = "File name", disabled = True)
+    filepath = ft.TextField(width = 470, text_align = ft.TextAlign.LEFT, label = "File path",
+    tooltip = "Specify a path to a .csv file where rows represent persons and columns represent items. The rows and columns must not be named (i.e., the file should only consist of numbers representing item-scores, where each item-score is seperated by a comma (',')). The rows will be summed, so the persons final scores will be their sum-scores. If you wish to employ a different scoring-rule, then perform the scoring manually and supply a .csv file containing only a single column representing final test-scores. Decimal points must be marked with a period ('.').")
     
     approach = ft.Dropdown(
         width = 630, label = "Approach", hint_text = "Choose estimation method.", options = [ft.dropdown.Option("Hanson and Brennan"), ft.dropdown.Option("Livingston and Lewis")],
@@ -278,12 +269,12 @@ def main(page: ft.Page):
         )
     
     max_number = ft.TextField(
-        width = 150, text_align = ft.TextAlign.RIGHT, label = "Maximum score", hint_text = "10 0", 
+        width = 150, text_align = ft.TextAlign.RIGHT, label = "Maximum score", hint_text = "100", 
         tooltip = "For the Livingston and Lewis approach: the maximum score that it is possible to attain on the test. \nFor the Hanson and Brennan approach: the actual test length in terms of number of items."
         )
 
     cut_number = ft.TextField(
-        width = 150, text_align = ft.TextAlign.RIGHT, label = "Cut-point(s)", hint_text = "0, 0, 0", 
+        width = 150, text_align = ft.TextAlign.RIGHT, label = "Cut-point(s)", hint_text = "0, 0, 0",
         tooltip = "The cut-points marking the thresholds for categorization. If there are two or more cut-points, seperate each cut-point with a comma (',')."
         )
 
@@ -328,51 +319,32 @@ def main(page: ft.Page):
         tooltip = "Whether to conduct and report classification consistency analysis."
         )
 
-    submit = ft.FilledButton(width = 150, text = "Submit")
+    resultswindow = ft.Column(controls = [ft.Text("Results", weight = ft.FontWeight.BOLD)])
+
+    submit = ft.FilledButton(width = 150, text = "Run", on_click = submit_clicked)
     submit.bgcolor = "blue"
-
-    md1 = """
-    # Markdown Example
-    Markdown allows you to easily include formatted text, images, and even formatted Dart code in your app.
-
-    ## Titles
-
-    Setext-style
-
-    #This is an H1 
-    =============
-    """
-    results = testresults
-    #ft.Markdown(md1, width = 630, selectable = True, code_style = ft.TextStyle(font_family="Roboto Mono"))
     
+
     page.add(
         ft.Row(controls = [
             ft.Column(controls = [
                 ft.Text("Data:", weight = ft.FontWeight.BOLD),
-                ft.Row(controls = [choosefile, filepath]),        
-                ft.Divider(),
+                ft.Row(controls = [choosefile, filepath]), 
                 ft.Text("Model fitting controls:", weight = ft.FontWeight.BOLD), 
                 approach,
                 ft.Row(controls = [model, lower_bound, upper_bound]),
-                ft.Divider(),
                 ft.Text("Test information:", weight = ft.FontWeight.BOLD),
                 ft.Row(
                     controls = [min_number, max_number, cut_number, reliability]
                 ),
-                ft.Divider(),
                 ft.Text("Output:", weight = ft.FontWeight.BOLD),
                 c1, c2, c3, c4,
-                ft.Divider(),
                 submit]
                 ),
-            ft.Column(
-                controls = results
-                )
+            resultswindow
             ], vertical_alignment = ft.CrossAxisAlignment.START
-        )
-        
+        )        
     )
-
     page.update()
 
 ft.app(target = main)
