@@ -230,13 +230,46 @@ def main(page: ft.Page):
     page.title = "BB-Classify"
 
     def submit_clicked(e):
+        if approach.value == "Livingston and Lewis":
+            appr = "ll"
+        else:
+            appr = ""
+        if c1.value:
+            a = "parameters"
+        else:
+            a = ""
+        if c3.value:
+            b = "accuracy"
+        else:
+            b = ""
+        if c4.value:
+            c = "consistency"
+        else:
+            c = ""
+        if model.value == "Four-parameter":
+            mdl = 4
+            fs = False
+        if model.value == "Four-parameter with fail-safe":
+            mdl = 4
+            fs = True
+        if model.value == "Two-parameter":
+            mdl = 2
+            fs = False
         output = cac(csv_to_list(filepath.value),
                      s2n(reliability.value),
                      s2n(min_number.value),
                      s2n(max_number.value), 
-                     s2n(cut_number.value, False))
-        #output = {"Parameters": [1, 2, 3, 4], "Output": ["a", "b", "c", "d"]}
-        resultswindow.controls.append(ft.Text(output))
+                     s2n(cut_number.value, False),
+                     mdl,
+                     s2n(lower_bound.value),
+                     s2n(upper_bound.value),
+                     fs,
+                     method = appr,
+                     output = [a, b, c])
+        out = list(output.keys())
+        for i in range(len(out)):            
+            resultswindow.controls.append(ft.Text("\n" + out[i]))
+            resultswindow.controls.append(ft.Text(output[out[i]]))
         resultswindow.update()
 
     def pick_files_result(e: ft.FilePickerResultEvent):
@@ -290,12 +323,12 @@ def main(page: ft.Page):
         )
     
     lower_bound = ft.TextField(
-        width = 150, text_align = ft.TextAlign.RIGHT, label = "Lower-bound", hint_text = "0", 
+        width = 150, text_align = ft.TextAlign.RIGHT, label = "Lower-bound", hint_text = "0", value = "0",
         tooltip = "Lower-bound value for the two-parameter model. Must be between 0 and 1, and less than the upper-bound value."
         )
 
     upper_bound = ft.TextField(
-        width = 150, text_align = ft.TextAlign.RIGHT, label = "Upper-bound", hint_text = "1", 
+        width = 150, text_align = ft.TextAlign.RIGHT, label = "Upper-bound", hint_text = "1", value = "1",
         tooltip = "Upper-bound value for the two-parameter model. Must be between 0 and 1, and greater than the lower-bound value."
         )
 
