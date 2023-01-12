@@ -8,6 +8,14 @@ import pandas as pd
 import numpy as np
 import csv
 
+def cronbachs_alpha(x):
+    x = np.transpose(np.array(x))
+    x = np.cov(x)
+    n = x.shape[1]
+    diag = sum(np.diag(x))
+    var = sum(sum(x))
+    alpha = (n / (n - 1)) * (1 - (diag / var))
+    return alpha
 def etl(mean, var, reliability, min = 0, max = 1):
     return ((mean - min) * (max - mean) - (reliability * var)) / (var * (1 - reliability))
 def k(mean, var, reliability, length):
@@ -212,15 +220,16 @@ def s2n(s, notlist = True):
     if len(out) == 1 and notlist == True:
         out = out[0]
     return out
-def csv_to_list(x):
+def csv_to_list(x, sumscores = True):
     data = []
     with open(x, 'r') as file:
         reader = csv.reader(file)
         for row in reader:
             row = list(map(float, row))
             data.append(row)
-    for i in range(len(data)):
-        data[i] = sum(data[i])
+    if sumscores:
+        for i in range(len(data)):
+            data[i] = sum(data[i])
     return data
 
 def main(page: ft.Page):
@@ -255,6 +264,9 @@ def main(page: ft.Page):
         if model.value == "Two-parameter":
             mdl = 2
             fs = False
+        if reliability.value == "":
+            reliability.value = str(cronbachs_alpha(csv_to_list(filepath.value, False)))
+            reliability.update()
         output = cac(csv_to_list(filepath.value),
                      s2n(reliability.value),
                      s2n(min_number.value),
@@ -283,13 +295,13 @@ def main(page: ft.Page):
 
     choosefile = ft.FilledButton(
         text = "Choose file...", width = 150, icon = ft.icons.UPLOAD_FILE,
-        tooltip = "Specify a path to a .csv file where rows represent persons and columns represent items. The rows and columns must not be named (i.e., the file should only consist of numbers representing item-scores, where each item-score is seperated by a comma (',')). The rows will be summed, so the persons final scores will be their sum-scores. If you wish to employ a different scoring-rule, then perform the scoring manually and supply a .csv file containing only a single column representing final test-scores. Decimal points must be marked with a period ('.').", 
+        tooltip = "Specify a path to a .csv file where rows represent persons and columns represent items. The rows and columns must not be named (i.e., the file should only consist of numbers representing item-scores, where each item-score is seperated by a comma (',')). Decimal points must be marked with a period ('.'). The rows will be summed, so the persons final scores will be their sum-scores. If you wish to employ a different scoring-rule, then perform the scoring manually and supply a .csv file containing only a single column representing final test-scores. If only a single column of values is supplied, the program will not be able to estimate reliability and it must as such be specified in the reliability input field below.", 
         on_click = lambda _: pick_files_dialog.pick_files(allow_multiple = False, allowed_extensions = ["csv"])
         )    
     choosefile.bgcolor = "blue"
 
     filepath = ft.TextField(width = 470, text_align = ft.TextAlign.LEFT, label = "File path",
-    tooltip = "Specify a path to a .csv file where rows represent persons and columns represent items. The rows and columns must not be named (i.e., the file should only consist of numbers representing item-scores, where each item-score is seperated by a comma (',')). The rows will be summed, so the persons final scores will be their sum-scores. If you wish to employ a different scoring-rule, then perform the scoring manually and supply a .csv file containing only a single column representing final test-scores. Decimal points must be marked with a period ('.').")
+    tooltip = "Specify a path to a .csv file where rows represent persons and columns represent items. The rows and columns must not be named (i.e., the file should only consist of numbers representing item-scores, where each item-score is seperated by a comma (',')). Decimal points must be marked with a period ('.'). The rows will be summed, so the persons final scores will be their sum-scores. If you wish to employ a different scoring-rule, then perform the scoring manually and supply a .csv file containing only a single column representing final test-scores. If only a single column of values is supplied, the program will not be able to estimate reliability and it must as such be specified in the reliability input field below.")
     
     approach = ft.Dropdown(
         width = 630, label = "Approach", hint_text = "Choose estimation method.", options = [ft.dropdown.Option("Hanson and Brennan"), ft.dropdown.Option("Livingston and Lewis")],
@@ -313,7 +325,7 @@ def main(page: ft.Page):
 
     reliability = ft.TextField(
         width = 150, text_align = ft.TextAlign.RIGHT, label = "Reliability", hint_text = "0.00", 
-        tooltip = "The test-score reliability coefficient (e.g., Cronbach's alpha). It is recommended that this value is specified down to at least the third decimal place."
+        tooltip = "The test-score reliability coefficient (e.g., Cronbach's alpha). It is recommended that this value is specified down to at least the third decimal place.\n If this field is left empty, the program will attempt to estimate the reliability with the Cronbach's Alpha estimator (requires the full data set of items)."
         )
 
     model = ft.Dropdown(
@@ -357,7 +369,6 @@ def main(page: ft.Page):
     submit = ft.FilledButton(width = 150, text = "Run", on_click = submit_clicked)
     submit.bgcolor = "blue"
     
-
     page.add(
         ft.Row(controls = [
             ft.Column(controls = [

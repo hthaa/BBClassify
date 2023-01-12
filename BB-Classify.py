@@ -7,6 +7,16 @@ import pandas as pd
 import numpy as np
 import csv
 
+
+def cronbachs_alpha(x):
+    x = np.transpose(np.array(x))
+    x = np.cov(x)
+    n = x.shape[1]
+    diag = sum(np.diag(x))
+    var = sum(sum(x))
+    alpha = (n / (n - 1)) * (1 - (diag / var))
+    return alpha
+
 ## Livingston and Lewis' effective test length.
 # mean = the mean of the observed-score distribution.
 # var = the variance of the observed-score distribution.
