@@ -8,8 +8,9 @@ import numpy as np
 import csv
 
 ## Turn a string with numbers delimited by commas (,) into numbers.
-# s = a sting of numbers separated by commas (,).
-def string_to_number(s, notlist = True):
+# s = a string of numbers separated by commas (,).
+# notlist: Store as single value if list is length 1.
+def string_to_number(s: str, notlist: bool = True):
     out = [int(x) if x.isdigit() else float(x) for x in s.replace(', ', ',').split(',')]
     if any(isinstance(x, float) for x in out):
         out = list(map(float, out))
@@ -20,7 +21,7 @@ def string_to_number(s, notlist = True):
 ## Load a .csv file and turn it into a list of lists.
 # x = A string specifying the path to the .csv file.
 # sumscores = Whether to create a single list withe ach entry being the sum of each sub-list.
-def csv_to_list(x, sumscores = True):
+def csv_to_list(x: str, sumscores: bool = True) -> list:
     data = []
     with open(x, 'r') as file:
         reader = csv.reader(file)
@@ -34,7 +35,7 @@ def csv_to_list(x, sumscores = True):
 
 ## The Cronbach's Alpha reliability coefficient.
 # x = a list of lists, where rows are items and columns respondents.
-def cronbachs_alpha(x):
+def cronbachs_alpha(x: list):
     x = np.transpose(np.array(x))
     x = np.cov(x)
     n = x.shape[1]
@@ -69,7 +70,7 @@ def k(mean, var, reliability, length):
 # b = beta shape paramter.
 # l = lower-bound location parameter.
 # u = upper-bound location parameter.
-def dbeta4p(x, a, b, l, u):
+def dbeta4p(x: float, a: float, b: float, l: float, u: float) -> float:
     if x < l or x > u:
         return 0
     else:
@@ -78,7 +79,7 @@ def dbeta4p(x, a, b, l, u):
 ## Function for fitting a four-parameter beta distribution to a vector of values-
 # x = vector of values.
 # moments = an optional list of the first four raw moments
-def beta4fit(x, moments = []):
+def beta4fit(x: list, moments: list = []) -> list[float]:
     if len(moments) != 4:
         m1 = stats.mean(x)
         s2 = stats.variance(x)
@@ -109,7 +110,7 @@ def beta4fit(x, moments = []):
 # x = vector of values.
 # l = lower-bound location parameter.
 # u = upper-bound location parameter.
-def beta2fit(x, l, u):
+def beta2fit(x: list, l: float, u: float):
     m1 = stats.mean(x)
     s2 = stats.variance(x)
     a = ((l - m1) * (l * (m1 - u) - m1**2 + m1 * u - s2)) / (s2 * (l - u))
@@ -121,7 +122,7 @@ def beta2fit(x, l, u):
 # N = total number of trials.
 # n = specific number of successes.
 # k = Lord's k.
-def dcbinom(p, N, n, k):
+def dcbinom(p: float, N: int, n: int, k: float):
     a = binom.pmf(n, N, p)
     b = binom.pmf(n, N - 2, p)
     c = binom.pmf(n - 1, N - 2, p)
@@ -136,10 +137,11 @@ def dcbinom(p, N, n, k):
 # u = upper-bound location parameter.
 # N = upper-bound of binomial distribution.
 # n = specific binomial outcome.
+# k = Lord's k.
 # lower = lower-bound of integration.
 # upper = upper bound of intergration.
 # method = specify Livingston and Lewis ("LL") or Hanson and Brennan approach.
-def bbintegrate1(a, b, l, u, N, n, k, lower, upper, method = "ll"):
+def bbintegrate1(a: float, b: float, l: float, u: float, N: int, n: int, k: float, lower: float, upper: float, method: str = "ll") -> float:
     if method != "ll":
         def f(x, a, b, l, u, N, n, k):
             return dbeta4p(x, a, b, l, u) * dcbinom(x, N, n, k)
@@ -160,7 +162,7 @@ def bbintegrate1(a, b, l, u, N, n, k, lower, upper, method = "ll"):
 # lower = lower-bound of integration.
 # upper = upper bound of intergration.
 # method = specify Livingston and Lewis ("LL") or Hanson and Brennan approach.
-def bbintegrate2(a, b, l, u, N, n1, n2, k, lower, upper, method = "ll"):
+def bbintegrate2(a: float, b: float, l: float, u: float, N: int, n1: int, n2: int, k: float, lower: float, upper: float, method: str = "ll") -> float:
     if method != "ll":
         def f(x, a, b, l, u, N, n1, n2, k):
             return dbeta4p(x, a, b, l, u) * dcbinom(x, N, n1, k) * dcbinom(x, N, n2, k)
@@ -173,7 +175,7 @@ def bbintegrate2(a, b, l, u, N, n1, n2, k, lower, upper, method = "ll"):
 ## Function for calculating the descending factorial each value of a vector.
 # x = vector of values.
 # r = the power x is to be raised to.
-def dfac(x, r):
+def dfac(x: list, r = int):
     x1 = list(x)
     for i in range(len(x)):
         if r <= 1:
@@ -188,7 +190,7 @@ def dfac(x, r):
 # x = vector of values.
 # n = the effective or actual test length.
 # k = Lord's k.
-def tsm(x, n, k):
+def tsm(x: list, n: int, k: float):
     m = [0, 0, 0, 0]
     for i in range(0, 4):
         if i == 0:
@@ -208,7 +210,7 @@ def tsm(x, n, k):
 # model = whether 2 or 4 parameters are to be fit.
 # l = if model = 2, specified lower-bound of 2-parameter distribution.
 # u = if model = 2, specified upper-bound of 2-parameter distribution.
-def betaparameters(x, n, k, model = 4, l = 0, u = 1):
+def betaparameters(x: list, n: int, k: float, model: int = 4, l: float = 0, u: float = 1):
     m = tsm(x, n, k)
     s2 = m[1] - m[0]**2
     g3 = (m[2] - 3 * m[0] * m[1] + 2 * m[0]**3) / (math.sqrt(s2)**3)
@@ -243,10 +245,13 @@ def betaparameters(x, n, k, model = 4, l = 0, u = 1):
 # failsafe = whether the function should automatically revert to a two-
 #       parameter solution if the four-parameter fitting procedure produces
 #       impermissible location-parameter estimates.
-# method = whether the Livingston and Lewis or the Hanson and Brennan approach
-#       is to be employed. Default is "ll" (Livingston and Lewis). Any other
-#       value passed means the Hanson and Brennan approach.
-def cac(x, reliability, min, max, cut, model = 4, l = 0, u = 1, failsafe = False, method = "ll", output = ["parameters", "accuracy", "consistency"]):
+# method = string specifying whether it is the Livingston and Lewis or the 
+#       Hanson and Brennan approach is to be employed. Default is "ll" 
+#       (Livingston and Lewis). Any other value passed means the Hanson and 
+#       Brennan approach.
+# output = list of strings which state what analyses to do and include in the 
+#       output.
+def cac(x, reliability: float, min: float, max: float, cut: float, model: int = 4, l: float = 0, u: float = 1, failsafe: bool = False, method: str = "ll", output: list[str] = ["parameters", "accuracy", "consistency"]):
     out = {}
     cut = [min] + cut + [max]
     tcut = list(cut)
