@@ -1,3 +1,15 @@
+##### This is an VERY early alpha build. Merely a skeleton with basic functionality. #####
+
+### Uncomment the following two lines of code to install what is needed to make the app and the executable:
+# pip install flet
+# pip install pyinstaller
+
+### Set working directory to where this file is located:
+# cd FILEPATH (e.g., cd C:/Users/Olaf/...)
+
+### Once the directory is set to where this file is located, run this line of code to make the executable file:
+# flet pack NAME_OF_THIS_FILE.py (e.g., flet pack fletgui.py)
+
 import flet as ft
 import scipy.special
 from scipy.integrate import quad
@@ -54,9 +66,13 @@ def beta4fit(x, moments = []):
     l = m1 - ((a * (s2 * (a + b + 1))**0.5) / (a * b)**0.5)
     u = m1 + ((b * (s2 * (a + b + 1))**0.5) / (a * b)**0.5)
     return [a, b, l, u]
-def beta2fit(x, l, u):
-    m1 = stats.mean(x)
-    s2 = stats.variance(x)
+def beta2fit(x, l, u, moments = []):
+    if len(moments) != 2:
+        m1 = stats.mean(x)
+        s2 = stats.variance(x)
+    else:
+        m1 = moments[0]
+        s2 = moments[1]
     a = ((l - m1) * (l * (m1 - u) - m1**2 + m1 * u - s2)) / (s2 * (l - u))
     b = ((m1 - u) * (l * (u - m1) + m1**2 - m1 * u + s2)) / (s2 * (u - l))
     return [a, b, l, u]
@@ -142,7 +158,7 @@ def cac(x, reliability, min, max, cut, model = 4, l = 0, u = 1, failsafe = False
         if method == "ll":
             Nnotrounded = etl(stats.mean(x), stats.variance(x), reliability, min, max)
             N = round(Nnotrounded)
-            pars = betaparameters(x, N, 0, model)
+            pars = betaparameters(x, N, 0, model, l, u)
             if (failsafe == True and model == 4) and (l < 0 or u > 1):
                 pars = betaparameters(x, N, 0, 2, l, u)
             pars["etl"] = Nnotrounded
@@ -160,7 +176,7 @@ def cac(x, reliability, min, max, cut, model = 4, l = 0, u = 1, failsafe = False
             pars["lords_k"] = K
     if "parameters" in output:
         out["parameters"] = pars
-        
+
     if "accuracy" in output:
         confmat = np.zeros((N + 1, len(cut) - 1))
         for i in range(len(cut) - 1):
@@ -213,7 +229,7 @@ def cac(x, reliability, min, max, cut, model = 4, l = 0, u = 1, failsafe = False
             out["consistencyMatrix"] = pd.DataFrame(consistencymatrix)
             out["overallConsistency"] = consistency    
     return out
-def s2n(s, notlist = True):
+def string_to_number(s, notlist = True):
     out = [int(x) if x.isdigit() else float(x) for x in s.replace(', ', ',').split(',')]
     if any(isinstance(x, float) for x in out):
         out = list(map(float, out))
@@ -232,9 +248,9 @@ def csv_to_list(x, sumscores = True):
             data[i] = sum(data[i])
     return data
 
-def main(page: ft.Page):
+def main(page: ft.Page): 
     page.window_height = 725
-    page.window_width = 665 * 2
+    page.window_width = 1330
     page.scroll = True
     page.title = "BB-Classify"
 
@@ -243,6 +259,7 @@ def main(page: ft.Page):
             appr = "ll"
         else:
             appr = ""
+            min_number.value = "0"
         if c1.value:
             a = "parameters"
         else:
@@ -268,20 +285,20 @@ def main(page: ft.Page):
             reliability.value = str(cronbachs_alpha(csv_to_list(filepath.value, False)))
             reliability.update()
         output = cac(csv_to_list(filepath.value),
-                     s2n(reliability.value),
-                     s2n(min_number.value),
-                     s2n(max_number.value), 
-                     s2n(cut_number.value, False),
+                     string_to_number(reliability.value),
+                     string_to_number(min_number.value),
+                     string_to_number(max_number.value), 
+                     string_to_number(cut_number.value, False),
                      mdl,
-                     s2n(lower_bound.value),
-                     s2n(upper_bound.value),
+                     string_to_number(lower_bound.value),
+                     string_to_number(upper_bound.value),
                      fs,
                      method = appr,
                      output = [a, b, c])
         out = list(output.keys())
         for i in range(len(out)):            
             resultswindow.controls.append(ft.Text("\n" + out[i]))
-            resultswindow.controls.append(ft.Text(output[out[i]]))
+            resultswindow.controls.append(ft.Text(output[out[i]], selectable = True))
         resultswindow.update()
 
     def pick_files_result(e: ft.FilePickerResultEvent):
@@ -392,4 +409,3 @@ def main(page: ft.Page):
     page.update()
 
 ft.app(target = main)
-
