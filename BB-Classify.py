@@ -80,7 +80,7 @@ def dbeta4p(x: float, a: float, b: float, l: float, u: float) -> float:
 # x = vector of values.
 # moments = an optional list of the first four raw moments
 def beta4fit(x: list, moments: list = []) -> list[float]:
-    if len(moments) != 4:
+    if len(moments) == 1:
         m1 = stats.mean(x)
         s2 = stats.variance(x)
         x3 = list(x)
@@ -110,9 +110,13 @@ def beta4fit(x: list, moments: list = []) -> list[float]:
 # x = vector of values.
 # l = lower-bound location parameter.
 # u = upper-bound location parameter.
-def beta2fit(x: list, l: float, u: float):
-    m1 = stats.mean(x)
-    s2 = stats.variance(x)
+def beta2fit(x: list, l: float, u: float, moments: list = []) -> list[float]:
+    if len(list) == 1:
+        m1 = stats.mean(x)
+        s2 = stats.variance(x)
+    else:
+        m1 = moments[0]
+        s2 = moments[1] - moments[0]**2
     a = ((l - m1) * (l * (m1 - u) - m1**2 + m1 * u - s2)) / (s2 * (l - u))
     b = ((m1 - u) * (l * (u - m1) + m1**2 - m1 * u + s2)) / (s2 * (u - l))
     return [a, b, l, u]

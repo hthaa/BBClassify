@@ -1,4 +1,4 @@
-##### This is an VERY early alpha build. Merely a skeleton with basic functionality. #####
+##### This is a VERY early alpha build. Merely a skeleton with basic functionality. #####
 
 ### Uncomment the following two lines of code to install what is needed to make the app and the executable:
 # pip install flet
