@@ -368,7 +368,7 @@ def cac(x, reliability: float, min: float, max: float, cut: float, model: int = 
             print("")
             print("Overall consistency:")
             print(out["Overall consistency"])
-        return out
+    return out
 
 # Setting the seed
 np.random.seed(123456)
